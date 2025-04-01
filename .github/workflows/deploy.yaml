@@ -33,6 +33,16 @@ jobs:
               with:
                   path: build_output/wwwroot
 
+    test:
+        needs: build
+        runs-on: ubuntu-latest
+        steps:
+            - name: Restore dependencies
+              run: dotnet restore
+
+            - name: Run tests
+              run: dotnet test --no-restore --verbosity normal
+
     deploy:
         needs: build
         runs-on: ubuntu-latest
