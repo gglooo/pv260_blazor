@@ -1,33 +1,45 @@
-permissions:
-    pages: write
-    id-token: write
-    contents: read
-
 name: Deploy Blazor WebAssembly to GitHub Pages
 
 on:
     push:
-        branches:
-            - main # or master
+        branches: [main]
+
+permissions:
+    contents: read
+    pages: write
+    id-token: write
+
+concurrency:
+    group: "pages"
+    cancel-in-progress: false
 
 jobs:
-    build-and-deploy:
+    build:
         runs-on: ubuntu-latest
-
         steps:
-            - name: Checkout source code
+            - name: Checkout repository
               uses: actions/checkout@v4
 
             - name: Setup .NET
               uses: actions/setup-dotnet@v4
               with:
-                  dotnet-version: "8.0.x" # or 7.0.x depending on your project
+                  dotnet-version: "8.0.x" # or your version
 
-            - name: Publish Blazor WebAssembly app
-              run: dotnet publish -c Release -o release
+            - name: Publish Blazor WebAssembly project
+              run: dotnet publish -c Release -o build_output
 
-            - name: Add .nojekyll file
-              run: touch release/wwwroot/.nojekyll
+            - name: Upload artifact for GitHub Pages
+              uses: actions/upload-pages-artifact@v2
+              with:
+                  path: build_output/wwwroot
 
+    deploy:
+        needs: build
+        runs-on: ubuntu-latest
+        environment:
+            name: github-pages
+            url: ${{ steps.deployment.outputs.page_url }}
+        steps:
             - name: Deploy to GitHub Pages
-              uses: actions/deploy-pages@v4
+              id: deployment
+              uses: actions/deploy-pages@v2
